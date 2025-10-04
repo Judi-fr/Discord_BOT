@@ -36,11 +36,11 @@ async def on_ready():
 
 @bot.command()
 async def github(ctx):
-    await ctx.send("https://github.com/")
+    await ctx.send("https://github.com/Judi-fr/Discord_BOT")
 
 @bot.command()
 async def meme(ctx):
-    response = requests.get('https://meme-api.com/gimme/MemesESP')
+    response = requests.get('https://meme-api.com/gimme/dankgentina')
     json_data = json.loads(response.text)
     await ctx.send(json_data['url'])
 
