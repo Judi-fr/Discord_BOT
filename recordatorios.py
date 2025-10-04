@@ -40,13 +40,22 @@ def parsear_tiempo(tiempo_str):
     
     return cantidad * conversiones[unidad]
 
+recordatorios = []
+verificar_recordatorios_task = None
+_setup_completed = False
+
 def setup_recordatorios_commands(bot):
+    global recordatorios, verificar_recordatorios_task, _setup_completed
+    
+    if _setup_completed:
+        return
+    
     recordatorios = cargar_recordatorios()
     
     @tasks.loop(seconds=10)
     async def verificar_recordatorios():
         """Verifica si hay recordatorios que enviar"""
-        nonlocal recordatorios
+        global recordatorios
         ahora = datetime.now().timestamp()
         recordatorios_pendientes = []
         
@@ -58,8 +67,11 @@ def setup_recordatorios_commands(bot):
                     
                     if canal and usuario:
                         await canal.send(f"⏰ {usuario.mention} Recordatorio: **{recordatorio['mensaje']}**")
+                        print(f"✅ Recordatorio enviado a {usuario.name}: {recordatorio['mensaje']}")
+                    else:
+                        print(f"⚠️ No se pudo enviar recordatorio - Canal: {canal}, Usuario: {usuario}")
                 except Exception as e:
-                    print(f"Error enviando recordatorio: {e}")
+                    print(f"❌ Error enviando recordatorio: {e}")
             else:
                 recordatorios_pendientes.append(recordatorio)
         
@@ -67,13 +79,20 @@ def setup_recordatorios_commands(bot):
             recordatorios = recordatorios_pendientes
             guardar_recordatorios(recordatorios)
     
-    @bot.event
-    async def on_ready():
-        verificar_recordatorios.start()
+    verificar_recordatorios_task = verificar_recordatorios
+    
+    async def on_ready_listener():
+        if verificar_recordatorios_task and not verificar_recordatorios_task.is_running():
+            verificar_recordatorios_task.start()
+            print("✅ Sistema de recordatorios iniciado")
+    
+    bot.add_listener(on_ready_listener, 'on_ready')
+    _setup_completed = True
     
     @bot.command()
     async def recordar(ctx, tiempo: str = None, *, mensaje: str = None):
         """Crea un recordatorio. Ejemplo: !recordar 10m tomar agua"""
+        global recordatorios
         if tiempo is None or mensaje is None:
             await ctx.send("❌ Uso: `!recordar <tiempo> <mensaje>`\nEjemplo: `!recordar 10m tomar agua`\nTiempos: s (segundos), m (minutos), h (horas), d (días)")
             return
@@ -102,6 +121,7 @@ def setup_recordatorios_commands(bot):
     @bot.command()
     async def mis_recordatorios(ctx):
         """Muestra tus recordatorios activos"""
+        global recordatorios
         mis_recordatorios = [r for r in recordatorios if r['usuario_id'] == ctx.author.id]
         
         if not mis_recordatorios:
@@ -125,7 +145,7 @@ def setup_recordatorios_commands(bot):
     @bot.command()
     async def borrar_recordatorios(ctx):
         """Borra todos tus recordatorios"""
-        nonlocal recordatorios
+        global recordatorios
         recordatorios_anteriores = len(recordatorios)
         recordatorios = [r for r in recordatorios if r['usuario_id'] != ctx.author.id]
         

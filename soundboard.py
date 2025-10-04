@@ -3,8 +3,8 @@ from discord.ext import commands
 import os
 
 SOUND_FILES = {
-    "bruh": "sounds/bruh.mp3",
-    "vine": "sounds/vine_boom.mp3",
+    "momo": "C:\Users\ezeri\Documents\Python\script\script2\audio\momo2",
+    "oomaagaa": "C:\Users\ezeri\Documents\Python\script\script2\audio\ohmygaa",
     "wtf": "sounds/wtf.mp3",
     "error": "sounds/windows_error.mp3",
     "airhorn": "sounds/airhorn.mp3",

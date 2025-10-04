@@ -1,7 +1,7 @@
-import discord
-from discord.ext import commands
+from discord_easy_commands import discord
 import yt_dlp
 
+# Configuración YT-DLP
 ytdl_opts = {
     "format": "bestaudio/best",
     "noplaylist": True,
@@ -14,54 +14,42 @@ FFMPEG_OPTIONS = {
     "options": "-vn",
 }
 
-def setup_music_commands(bot):
-    @bot.command()
-    async def join(ctx):
-        if ctx.author.voice:
-            channel = ctx.author.voice.channel
-            await channel.connect()
-            await ctx.send("🎵 Me conecté al canal de voz")
-        else:
-            await ctx.send("❌ Tenés que estar en un canal de voz")
+# 🎵 Entrar al canal de voz
+async def join(ctx):
+    if ctx.author.voice:
+        channel = ctx.author.voice.channel
+        await channel.connect()
+        await ctx.send("🎵 Me conecté al canal de voz")
+    else:
+        await ctx.send("❌ Tenés que estar en un canal de voz")
 
-    @bot.command()
-    async def leave(ctx):
-        if ctx.voice_client:
-            await ctx.voice_client.disconnect()
-            await ctx.send("👋 Me desconecté")
-        else:
-            await ctx.send("❌ No estoy en ningún canal")
+# 🎵 Salir del canal
+async def leave(ctx):
+    if ctx.voice_client:
+        await ctx.voice_client.disconnect()
+        await ctx.send("👋 Me desconecté")
+    else:
+        await ctx.send("❌ No estoy en ningún canal")
 
-    @bot.command()
-    async def play(ctx, url: str):
-        if not ctx.voice_client:  
-            if ctx.author.voice:
-                channel = ctx.author.voice.channel
-                await channel.connect()
-            else:
-                await ctx.send("❌ Tenés que estar en un canal de voz")
-                return
+# 🎵 Reproducir música
+async def play(ctx, url: str):
+    if not ctx.voice_client:  
+        await join(ctx)
 
-        vc = ctx.voice_client
-        if vc.is_playing():
-            vc.stop()
+    vc = ctx.voice_client
+    if vc.is_playing():
+        vc.stop()
 
-        try:
-            info = ytdl.extract_info(url, download=False)
-            if info is None:
-                await ctx.send("❌ No pude obtener información del video")
-                return
+    info = ytdl.extract_info(url, download=False)
+    audio_url = info["url"]
 
-            audio_url = info["url"]
-            vc.play(discord.FFmpegPCMAudio(audio_url, **FFMPEG_OPTIONS))  # type: ignore
-            await ctx.send(f"▶️ Reproduciendo: **{info['title']}**")
-        except Exception as e:
-            await ctx.send(f"❌ Error al reproducir: {str(e)}")
+    vc.play(discord.FFmpegPCMAudio(audio_url, **FFMPEG_OPTIONS))
+    await ctx.send(f"▶️ Reproduciendo: **{info['title']}**")
 
-    @bot.command()
-    async def stop(ctx):
-        if ctx.voice_client and ctx.voice_client.is_playing():
-            ctx.voice_client.stop()
-            await ctx.send("⏹️ Música detenida")
-        else:
-            await ctx.send("❌ No estoy reproduciendo nada")
+# 🎵 Detener música
+async def stop(ctx):
+    if ctx.voice_client and ctx.voice_client.is_playing():
+        ctx.voice_client.stop()
+        await ctx.send("⏹️ Música detenida")
+    else:
+        await ctx.send("❌ No estoy reproduciendo nada")
